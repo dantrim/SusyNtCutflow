@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 
+// SusyNtuple
+#include "SusyNtuple/AnalysisType.h"
+
 // SusyNtCutflow
 #include "SusyNtCutflow/Cutflow.h"
 #include "SusyNtCutflow/Selector.h"
@@ -17,7 +20,9 @@ namespace Susy {
     {
         public :
         Counter();
+        Counter& setAnalysis(const AnalysisType &a);
         Counter& setCutflow(const Cutflow &c);
+
         
         const std::vector<std::string> eventCutflowLabels();
         const std::vector<std::vector<std::string>> cutflowLabels(const Cutflow &c);
@@ -38,6 +43,8 @@ namespace Susy {
             flags
         */ 
         std::string retrieveEventCounters();
+        
+        std::string retrieveAnaCounters();
 
         /**
             As the event cleaning cuts are ~independent of
@@ -46,9 +53,21 @@ namespace Susy {
             class
         */
         bool pass_eventCleaning(Link* link);
-        
+
+        bool pass_cutflow(Link* link);
+        //
+        // Regions
+        //
+        bool pass_Stop2l_ME(Link* link);
+
+
+        /**
+            "Dilepton" flavor for >= 1 baselepton
+        */
+        void  getLeptonFlavor(Link* link); 
 
         protected :
+            AnalysisType m_anatype;
             Cutflow m_cutflow;
 
             /**
@@ -66,18 +85,11 @@ namespace Susy {
             */
             bool m_dilepton;
             float m_dileptonCounters [100][100][100];
-            //std::vector<std::vector<std::vector<float>>> m_dileptonCounters;
             bool m_singleLep;
             float m_singleLepCounters [100][100];
-            //std::vector<std::vector<std::vector<float>>> m_singleLepCounters;
-
-            /**
-            Cut requirements
-            */
-            int         m_minBaseLepIncl;     ///< minimum number of baseline leptons (greather than or equal to)
-            int         m_minBaseLepExcl;     ///< minimum number of baseline leptons (greater than)
-            int         m_nBaseLep;           ///< number of baseline leptons (==)
-            int         m_nSigLep;            ///< number of signal leptons (==)
+            bool m_triLep;
+        
+            LeptonChan m_lepchan;
 
             /**
             Object to implement the selections

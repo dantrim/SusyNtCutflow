@@ -23,11 +23,27 @@ namespace Susy {
         Selector& setCutflow(const Cutflow &c);
         Selector& buildRegion(int ireg);
 
+        
+        /**
+        Region groupings
+        */
+        bool pass_Stop2l_ME(Link* link);
+
+        /**
+            Return the sign of the product of lepton charges
+        */
+        int leptonSign(Link* link);
+
+        // pass min base w/ 10 GeV pt requirement
+        bool pass_minNBase(Link* link);
+    
+
         protected :
         Cutflow m_cutflow;
         
         
         // selection requirements
+        float   m_minPtBaseLep;         ///< minimum pT of baseline leptons (greater than)
         int     m_minBaseLepIncl;       ///< minimum number of baseline leptons (greater than or equal to)
         int     m_minBaseLepExcl;       ///< minimum number of baseline leptons (greater than)
         int     m_nBaseLep;             ///< number of baseline leptons (==)

@@ -44,7 +44,7 @@ SusyCutflow& SusyCutflow::setAnalysis(const AnalysisType &a)
         }
         case(AnalysisType::kUnknown) : {
             cout << "WARNING SusyCutflow::setAnalysis: AnalysisType::kUnknown" << endl;
-            cout << "WARNING    -->Exitting." << endl;
+            cout << "WARNING    --> Exitting." << endl;
             exit(1);
             break;
         }
@@ -58,7 +58,7 @@ SusyCutflow& SusyCutflow::setAnalysis(const AnalysisType &a)
 SusyCutflow& SusyCutflow::setCutflow(const Cutflow &a)
 {
     m_cutflow = a;
-    m_counter.setCutflow(a);
+    m_counter.setAnalysis(m_anatype).setCutflow(a);
     return *this;
 }
 
@@ -98,6 +98,8 @@ Bool_t SusyCutflow::Process(Long64_t entry)
 
     // Set up the Counter tool
     if(!m_counter.pass_eventCleaning(link))     return false;
+   
+    if(!m_counter.pass_cutflow(link))           return false; 
     
 
 
@@ -113,6 +115,7 @@ void SusyCutflow::Terminate()
 {
     // get the event cleaning counter summary
     cout << m_counter.retrieveEventCounters() << endl;
+    cout << m_counter.retrieveAnaCounters() << endl;
 
     // Call SusyNtAna
     SusyNtAna::Terminate();

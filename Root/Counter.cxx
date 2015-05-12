@@ -123,7 +123,7 @@ const vector<vector<string>> Counter::cutflowLabels(const Cutflow &c)
         ss_labels.push_back(">= 1 baseline lepton");
         ss_labels.push_back("== 2 baseline leptons");
         ss_labels.push_back("== 2 signal leptons");
-        labels.push_back(os_labels);
+        labels.push_back(ss_labels);
         break;
     } // end case Stop2L_ME
 
@@ -162,6 +162,9 @@ void Counter::constructCounters(const Cutflow &c)
     // (Cutflow with Maria-Elena)
     //////////////////////////////////////
         case(Cutflow::Stop2l_ME) : {
+            //
+            // set dilepton counters
+            //  
             for(unsigned int iReg=0; iReg<cutflowLabels(c).size(); iReg++){
             for(unsigned int iCut=0; iCut<cutflowLabels(c)[iReg].size(); iCut++){
                 m_dileptonCounters[iReg][iCut][LeptonChan2idx(LeptonChan::SF)] = 0.0;
@@ -224,6 +227,73 @@ bool Counter::pass_eventCleaning(Link* link)
     return true;
 }
 /* =================================================== */
+//  Analysis-level selections
+/* =================================================== */
+bool Counter::pass_cutflow(Link* link)
+{
+    bool pass = true;
+    switch(m_cutflow) {
+        ////////////////////////////////
+        // Stop-2L ME
+        ////////////////////////////////
+        case(Cutflow::Stop2l_ME) : {
+            if(!pass_Stop2l_ME(link)) pass = false;
+            break;
+        }
+        //////////////////////////////////////
+        // Unknown
+        //////////////////////////////////////
+        case(Cutflow::kUnknown) : {
+            cout << "WARNING Counter::pass_cutflow: error. Uknown cutflow type." << endl;
+            cout << "WARNING    --> Exitting." << endl;
+            exit(1);
+            break;
+        }
+    } // end switch
+
+    return pass;
+
+}
+/* =================================================== */
+//  Cuts for Stop2l_ME
+/* =================================================== */
+bool Counter::pass_Stop2l_ME(Link* link)
+{
+    for(uint ireg=0; ireg < cutflowLabels(m_cutflow).size(); ireg++){
+        int iCut=0;
+        m_selector.setCutflow(m_cutflow).buildRegion(ireg);
+        if(ireg==0) { 
+            if(!m_selector.pass_minNBase(link)) return false; 
+            getLeptonFlavor(link);
+            int sign = m_selector.leptonSign(link);
+            if(sign>0)      m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+            else if(sign<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+        }
+        iCut++;
+    }
+    return true;
+}
+
+/* =================================================== */
+//  Get the "dilepton" flavor for >= 1 baselepton
+/* =================================================== */
+void Counter::getLeptonFlavor(Link* link)
+{
+    int ne=0;
+    int nm=0;
+    for(uint i=0; i<link->baseLeptons->size(); ++i)
+    {
+        bool isEle = link->baseLeptons->at(i)->isEle();
+        if(isEle) { ne++; }
+        else      { nm++; }
+    }
+    if( (ne==1 && nm==0) || (ne==0 && nm==1) ) m_lepchan = LeptonChan::SF;
+    else if( (ne==0 && nm>1) || (ne>1 && nm==0) ) m_lepchan = LeptonChan::SF;
+    else if( link->baseLeptons->size() > 0 ) m_lepchan = LeptonChan::DF; 
+}
+
+
+/* =================================================== */
 //  Get the event cleaning counters
 /* =================================================== */
 std::string Counter::retrieveEventCounters()
@@ -240,5 +310,38 @@ std::string Counter::retrieveEventCounters()
            <<endl;
     }
     oss<<endl;
+    return oss.str();
+}
+/* =================================================== */
+//  Get the counters for each ana
+/* =================================================== */
+std::string Counter::retrieveAnaCounters()
+{
+    ostringstream oss;
+    vector<vector<string>> labels = Counter::cutflowLabels(m_cutflow);
+    struct shorter { bool operator()(const std::string &a, const std::string &b){
+                        return a.size() < b.size(); } };
+    if(m_dilepton)
+    {
+    for(uint ireg=0; ireg<labels.size(); ireg++){
+        
+        size_t max_label_length = max_element(labels[ireg].begin(), labels[ireg].end(),
+                                shorter())->size();
+        oss<<std::left<<setw(max_label_length+2) << m_regions[ireg] << endl;
+        oss<<setw(max_label_length+4)<<"  "<<setw(6)<<"SF" <<"  "<< "DF" << endl;
+      //  oss<<setw(max_label_length+2)<<" "
+      //     <<"SF"<<setw(8)<<"DF"<<endl;
+        for(uint icut=0; icut<labels[ireg].size(); icut++){
+            oss<<"  "<<setw(max_label_length+2)<<std::left<<labels[ireg][icut]
+               <<setw(8)<<m_dileptonCounters[ireg][icut][LeptonChan2idx(LeptonChan::SF)]
+               <<setw(8)<<m_dileptonCounters[ireg][icut][LeptonChan2idx(LeptonChan::DF)]
+               <<endl;
+        } // icut
+        oss<<"  "<<setw(8)<<endl;
+    } // ireg
+    } // if dilepton
+    else { oss << "INVALID" << endl; }
+    oss<<endl;
+    
     return oss.str();
 }
