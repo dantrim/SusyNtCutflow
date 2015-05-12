@@ -29,7 +29,7 @@ void help()
     cout << "          defaults: -1 (all events)"    << endl;
 
     cout << "       -c cutflow "                     << endl;
-    cout << "          defaults: stop2L"             << endl;
+    cout << "          defaults: Stop2l_ME"          << endl;
 
     cout << "       -h print this help"              << endl;
 }
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 {
     int dbg=0;
     int nEvt=-1;
-    string cutflow;
+    string cutflow = "Stop2l_ME";
     string sample;
     string input;
     cout << " --------------------------- " << endl;
