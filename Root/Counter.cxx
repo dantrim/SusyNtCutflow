@@ -14,17 +14,40 @@ using namespace std;
 //  Constructor 
 /* =================================================== */
 Counter::Counter() :
+    // analysis type
+    m_anatype(AnalysisType::kUnknown),
     // cutflow type
     m_cutflow(Cutflow::kUnknown),
     // final state topologies
     m_dilepton(false),
-    m_singleLep(false),
-    // cut requirements
-    m_minBaseLepIncl(0),
-    m_minBaseLepExcl(0),
-    m_nBaseLep(0),
-    m_nSigLep(0)
+    m_singleLep(false)
 {
+}
+/* =================================================== */
+//  Set the analysis
+/* =================================================== */
+Counter& Counter::setAnalysis(const AnalysisType &a)
+{
+    m_anatype = a;
+    switch(a) {
+        case(AnalysisType::Ana_2Lep) :
+        case(AnalysisType::Ana_2LepWH) : {
+            m_dilepton = true;
+            break;
+        }
+        case(AnalysisType::Ana_3Lep) : {
+            m_triLep = true;
+            break;
+        }
+        case(AnalysisType::kUnknown) : {
+            cout << "WARNING Counter::setAnalysis: AnalysisType::kUnknown" << endl;
+            cout << "WARNING    --> Exitting." << endl;
+            exit(1);
+            break;
+        }  
+    } // end switch
+
+    return *this;
 }
 /* =================================================== */
 //  Set the cutflow
@@ -124,9 +147,6 @@ void Counter::constructEventCleaningCounters()
 {
     for(unsigned int iEv=0; iEv<Counter::eventCutflowLabels().size(); ++iEv)
     {
-        cout << Counter::eventCutflowLabels()[iEv] << endl;
-        cout << Counter::eventCutflowLabels()[iEv] << endl;
-        cout << Counter::eventCutflowLabels()[iEv] << endl;
         cout << Counter::eventCutflowLabels()[iEv] << endl;
         m_cleaningCounters[iEv] = 0.0;
     }
