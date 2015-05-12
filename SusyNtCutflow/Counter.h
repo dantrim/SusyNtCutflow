@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>  // for debug
 
 // SusyNtuple
 #include "SusyNtuple/AnalysisType.h"
@@ -64,7 +65,15 @@ namespace Susy {
         /**
             "Dilepton" flavor for >= 1 baselepton
         */
+        void dumpThisCut(Link* link);
         void  getLeptonFlavor(Link* link); 
+
+
+        /**
+            debug output file
+        */
+        std::fstream outfile;
+        std::string debug_name = "dantrim_sigLep_May12.txt";
 
         protected :
             AnalysisType m_anatype;

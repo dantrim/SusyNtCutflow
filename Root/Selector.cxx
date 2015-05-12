@@ -84,6 +84,20 @@ bool Selector::pass_minNBase(Link* link)
     return (pass_minLep && pass_minPt);
 }
 /* ================================================ */
+//  Pass exactly N base leptons
+/* ================================================ */
+bool Selector::pass_baseNLep(Link* link)
+{
+    return link->baseLeptons->size()==2;
+}
+/* ================================================ */
+//  Pass exactly N signal leptons
+/* ================================================ */
+bool Selector::pass_sigNLep(Link* link)
+{
+    return link->leptons->size()==2;
+}
+/* ================================================ */
 //  Return the sign of the product of lepton charges
 /* ================================================ */
 int Selector::leptonSign(Link* link)

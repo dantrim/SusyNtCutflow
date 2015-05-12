@@ -36,6 +36,10 @@ namespace Susy {
 
         // pass min base w/ 10 GeV pt requirement
         bool pass_minNBase(Link* link);
+        // pass exactly N base leptons
+        bool pass_baseNLep(Link* link);
+        // pass exactly N signal leptons
+        bool pass_sigNLep(Link* link);
     
 
         protected :

@@ -266,10 +266,25 @@ bool Counter::pass_Stop2l_ME(Link* link)
             if(!m_selector.pass_minNBase(link)) return false; 
             getLeptonFlavor(link);
             int sign = m_selector.leptonSign(link);
-            if(sign>0)      m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
-            else if(sign<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
-        }
+            m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+     //       if(sign>0)      m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+     //       else if(sign<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+     //   }
         iCut++;
+        if(!m_selector.pass_baseNLep(link)) return false;
+        getLeptonFlavor(link);
+        int sign2 = m_selector.leptonSign(link);
+        m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+     //   if(sign2>0) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+     //   if(sign2<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+        iCut++;
+        if(!m_selector.pass_sigNLep(link)) return false;
+        m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+        // debug
+        dumpThisCut(link);
+        iCut++;
+
+        } // ireg==0
     }
     return true;
 }
@@ -345,3 +360,44 @@ std::string Counter::retrieveAnaCounters()
     
     return oss.str();
 }
+
+
+
+
+/* =================================================== */
+//  Dump some basic information at the cut level 
+//  (i.e. no specific event number in mind
+/* =================================================== */
+void Counter::dumpThisCut(Link* link)
+{
+    outfile.open(debug_name.c_str(), ios::app | ios::out);
+    float lept1Pt, lept1Eta, lept1Phi;
+    float lept2Pt, lept2Eta, lept2Phi;
+    int id0, id1;
+    int eventno = link->nt->evt()->eventNumber();
+    int run     = link->nt->evt()->run;
+    
+    lept1Pt = link->leptons ->at(0)->Pt();
+    lept1Eta = link->leptons->at(0)->Eta();
+    lept1Phi = link->leptons->at(0)->Phi();
+    lept2Pt = link->leptons ->at(1)->Pt();
+    lept2Eta = link->leptons->at(1)->Eta();
+    lept2Phi = link->leptons->at(1)->Phi();
+
+    id0 = link->leptons ->at(0)->isEle() ? 11 : 13;
+    id1 = link->leptons ->at(1)->isEle() ? 11 : 13;
+    
+    id0 *= link->leptons->at(0)->q;
+    id1 *= link->leptons->at(1)->q;
+    
+    
+    outfile<<"EventNumber: " << eventno
+           <<"  run: " << link->nt->evt()->run
+           <<"  l0_pt: " << lept1Pt << "  l0_eta: " << lept1Eta << "  l0_phi: " << lept1Phi << "  l0_id: " << id0
+           <<"  l1_pt: " << lept2Pt << "  l1_eta: " << lept2Eta << "  l1_phi: " << lept2Phi << "  l1_id: " << id1;
+
+    outfile<<endl;
+    outfile.close();
+}
+
+
