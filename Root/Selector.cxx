@@ -107,7 +107,22 @@ int Selector::leptonSign(Link* link)
     {
         q *= link->baseLeptons->at(i)->q;
     }
-    if(link->baseLeptons->size()==1) return 1;
-    else if(q>0)                     return 1;
-    else if(q<0)                     return -1;
+    if(link->baseLeptons->size()==1) q=1; // return 1;
+    else if(q>0)                     q=1;
+    else if(q<0)                     q=-1;
+    return q;
+}
+/* ================================================ */
+//  Pass mll cut
+/* ================================================ */
+bool Selector::pass_minMll(Link* link)
+{
+    return ((*link->leptons->at(0) + *link->leptons->at(1)).M()>20.0);
+}
+/* ================================================ */
+//  Pass met cut
+/* ================================================ */
+bool Selector::pass_minMet(Link* link)
+{
+    return link->met->Et>40.0;
 }

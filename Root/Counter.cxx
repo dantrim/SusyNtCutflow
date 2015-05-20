@@ -20,7 +20,8 @@ Counter::Counter() :
     m_cutflow(Cutflow::kUnknown),
     // final state topologies
     m_dilepton(false),
-    m_singleLep(false)
+    m_singleLep(false),
+    m_dummy(0)
 {
 }
 /* =================================================== */
@@ -114,6 +115,8 @@ const vector<vector<string>> Counter::cutflowLabels(const Cutflow &c)
         os_labels.push_back(">= 1 baseline lepton");
         os_labels.push_back("== 2 baseline leptons");
         os_labels.push_back("== 2 signal leptons");
+        os_labels.push_back("mll > 20 GeV");
+        os_labels.push_back("met > 40 GeV");
         labels.push_back(os_labels);
         //
         // SS selection
@@ -123,6 +126,8 @@ const vector<vector<string>> Counter::cutflowLabels(const Cutflow &c)
         ss_labels.push_back(">= 1 baseline lepton");
         ss_labels.push_back("== 2 baseline leptons");
         ss_labels.push_back("== 2 signal leptons");
+        ss_labels.push_back("mll > 20 GeV");
+        ss_labels.push_back("met > 40 GeV");
         labels.push_back(ss_labels);
         break;
     } // end case Stop2L_ME
@@ -195,6 +200,8 @@ bool Counter::pass_eventCleaning(Link* link)
     int iEventCut=0;
     // count number read-in
     m_cleaningCounters[iEventCut]++;    iEventCut++;
+    //debug
+    //Counter::dumpThisInfo(link);
 
     int flags = link->nt->evt()->cutFlags[NtSys::SusyNtSys::NOM]; 
     // grl
@@ -266,23 +273,40 @@ bool Counter::pass_Stop2l_ME(Link* link)
             if(!m_selector.pass_minNBase(link)) return false; 
             getLeptonFlavor(link);
             int sign = m_selector.leptonSign(link);
-            m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
-     //       if(sign>0)      m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
-     //       else if(sign<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+     //       m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+            if(sign>0)      m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+            else if(sign<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+            //debug
+            if(sign<0){
+                dumpThisCut(link);
+            }
      //   }
-        iCut++;
-        if(!m_selector.pass_baseNLep(link)) return false;
-        getLeptonFlavor(link);
-        int sign2 = m_selector.leptonSign(link);
-        m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
-     //   if(sign2>0) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
-     //   if(sign2<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
-        iCut++;
-        if(!m_selector.pass_sigNLep(link)) return false;
-        m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+            iCut++;
+            if(!m_selector.pass_baseNLep(link)) return false;
+            getLeptonFlavor(link);
+            int sign2 = m_selector.leptonSign(link);
+     //       m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+        if(sign2>0) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+        if(sign2<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+            iCut++;
+            if(!m_selector.pass_sigNLep(link)) return false;
+            if(sign2>0) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+            if(sign2<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+         //   m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
         // debug
-        dumpThisCut(link);
-        iCut++;
+      //  dumpThisCut(link, entry);
+      //  m_dummy++;
+            iCut++;
+            if(!m_selector.pass_minMll(link)) return false;
+            if(sign2>0) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+            if(sign2<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+        //    m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+            iCut++;
+            if(!m_selector.pass_minMet(link)) return false;
+            if(sign2>0) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+            if(sign2<0) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+        //    m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+            iCut++;
 
         } // ireg==0
     }
@@ -304,7 +328,7 @@ void Counter::getLeptonFlavor(Link* link)
     }
     if( (ne==1 && nm==0) || (ne==0 && nm==1) ) m_lepchan = LeptonChan::SF;
     else if( (ne==0 && nm>1) || (ne>1 && nm==0) ) m_lepchan = LeptonChan::SF;
-    else if( link->baseLeptons->size() > 0 ) m_lepchan = LeptonChan::DF; 
+    else if( link->baseLeptons->size() > 1 ) m_lepchan = LeptonChan::DF; 
 }
 
 
@@ -371,13 +395,17 @@ std::string Counter::retrieveAnaCounters()
 void Counter::dumpThisCut(Link* link)
 {
     outfile.open(debug_name.c_str(), ios::app | ios::out);
-    float lept1Pt, lept1Eta, lept1Phi;
-    float lept2Pt, lept2Eta, lept2Phi;
-    int id0, id1;
     int eventno = link->nt->evt()->eventNumber();
-    int run     = link->nt->evt()->run;
+    outfile<<"EventNumber: " << eventno;
+    for(uint il = 0; il<link->baseLeptons->size(); il++){
+        outfile << "          lep("  << il << ")  id: " << (link->baseLeptons->at(il)->isEle() ? 11 : 13) << "  q: " << link->baseLeptons->at(il)->q;
+    //    outfile << "  pt: " << link->baseLeptons->at(il)->Pt() << "  eta: " << link->baseLeptons->at(il)->Eta() << "  phi: " << link->baseLeptons->at(il)->Phi();
+    }
+    outfile << "        sign: " << m_selector.leptonSign(link);
+    outfile << endl;
+    outfile.close();
     
-    lept1Pt = link->leptons ->at(0)->Pt();
+/*    lept1Pt = link->leptons ->at(0)->Pt();
     lept1Eta = link->leptons->at(0)->Eta();
     lept1Phi = link->leptons->at(0)->Phi();
     lept2Pt = link->leptons ->at(1)->Pt();
@@ -391,13 +419,43 @@ void Counter::dumpThisCut(Link* link)
     id1 *= link->leptons->at(1)->q;
     
     
-    outfile<<"EventNumber: " << eventno
-           <<"  run: " << link->nt->evt()->run
-           <<"  l0_pt: " << lept1Pt << "  l0_eta: " << lept1Eta << "  l0_phi: " << lept1Phi << "  l0_id: " << id0
-           <<"  l1_pt: " << lept2Pt << "  l1_eta: " << lept2Eta << "  l1_phi: " << lept2Phi << "  l1_id: " << id1;
-
+    outfile<<"EventNumber: " << eventno;
+         //  <<"  (pt0,pt1)=("<<lept1Pt<<", "<<lept2Pt<<")"
+         //  <<"  (eta0,eta1)=("<<lept1Eta<<", "<<lept2Eta<<")"
+         //  <<"  (phi0,phi1)=("<<lept1Phi<<", "<<lept2Phi<<")"
+         //  <<"  (id0,id1)=("<<id0<<", "<<id1<<")";
     outfile<<endl;
     outfile.close();
+*/
 }
+void Counter::dumpThisInfo(Link* link)
+{
+//    vector<int> me_events = { 1405480, 1406138, 458522, 1405485, 1405423,
+//                                671716, 458577, 458557, 1406102, 1405606,
+//                                1405608, 1405694,  671755 };
+//    
+    outfile.open(debug_name.c_str(), ios::app | ios::out);
+    int eventno = link->nt->evt()->eventNumber();
+     //   outfile<<eventno<<endl;
+//    for(uint iev=0; iev<me_events.size(); iev++){
+//        if(eventno==me_events[iev]){
+//  //  if(find(me_events.begin(), me_events.end(), eventno)!=me_events.end()){
+    float muPt, muEta, muPhi;
+    for(uint imu=0; imu<link->preMuons->size(); imu++){
+        Susy::Muon* mu = link->preMuons->at(imu);
+      //  if(mu->isBadMuon){
+            int isbad = mu->isBadMuon ? 1 : 0;
+      //      int nmu = link->baseMuons->size();
+     //       outfile << "nmu: " << nmu << "  ";
+            muPt = mu->Pt();
+            muEta = mu->Eta();
+            muPhi = mu->Phi();
+            outfile<<"Event: " << eventno <<"  muon pt: " << muPt<<"  muon phi: " << muPhi<<"  muon eta: " << muEta << "  isBad: "<<isbad << endl;;
+      }
+//    }
+//    }
+            outfile.close();
+}
+        
 
 

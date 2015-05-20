@@ -97,10 +97,11 @@ Bool_t SusyCutflow::Process(Long64_t entry)
     }
 
     // Set up the Counter tool
+  //  m_counter.dumpThisInfo(link);
     if(!m_counter.pass_eventCleaning(link))     return false;
    
     if(!m_counter.pass_cutflow(link))           return false; 
-    
+   // m_counter.dumpThisCut(link);
 
 
     // delete the link here since we re-attach each event

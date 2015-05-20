@@ -66,6 +66,7 @@ namespace Susy {
             "Dilepton" flavor for >= 1 baselepton
         */
         void dumpThisCut(Link* link);
+        void dumpThisInfo(Link* link);
         void  getLeptonFlavor(Link* link); 
 
 
@@ -74,6 +75,8 @@ namespace Susy {
         */
         std::fstream outfile;
         std::string debug_name = "dantrim_sigLep_May12.txt";
+        // dummy
+        int m_dummy;
 
         protected :
             AnalysisType m_anatype;
@@ -99,6 +102,7 @@ namespace Susy {
             bool m_triLep;
         
             LeptonChan m_lepchan;
+
 
             /**
             Object to implement the selections

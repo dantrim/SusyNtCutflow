@@ -40,6 +40,9 @@ namespace Susy {
         bool pass_baseNLep(Link* link);
         // pass exactly N signal leptons
         bool pass_sigNLep(Link* link);
+        
+        bool pass_minMll(Link* link);
+        bool pass_minMet(Link* link);
     
 
         protected :
