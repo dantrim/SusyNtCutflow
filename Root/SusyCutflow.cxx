@@ -92,7 +92,7 @@ Bool_t SusyCutflow::Process(Long64_t entry)
         cout << APP_NAME << "    "
              << "Processing entry " << setw(6) << m_chainEntry << "  "
              << "run " << setw(6) << link->nt->evt()->run << "  "
-             << "event " << setw(7) << link->nt->evt()->eventNumber() 
+             << "event " << setw(7) << link->nt->evt()->eventNumber 
         << endl;
     }
 

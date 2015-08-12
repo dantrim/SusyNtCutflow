@@ -102,15 +102,26 @@ bool Selector::pass_sigNLep(Link* link)
 /* ================================================ */
 int Selector::leptonSign(Link* link)
 {
-    int q=1;
-    for(uint i=0; i<link->baseLeptons->size(); ++i)
-    {
-        q *= link->baseLeptons->at(i)->q;
+    if(m_cutflow == Cutflow::Stop2l_ME) { 
+        int same_sign = true;
+        for(uint i=1; i!=link->baseLeptons->size(); ++i){
+            if(link->baseLeptons->at(0)->q != link->baseLeptons->at(i)->q){
+                same_sign = false;
+                break;
+            }
+        }
+        return same_sign;
+    } else {
+        int q=1;
+        for(uint i=0; i<link->baseLeptons->size(); ++i)
+        {
+            q *= link->baseLeptons->at(i)->q;
+        }
+        if(link->baseLeptons->size()==1) q=1; // return 1;
+        else if(q>0)                     q=1;
+        else if(q<0)                     q=-1;
+        return q;
     }
-    if(link->baseLeptons->size()==1) q=1; // return 1;
-    else if(q>0)                     q=1;
-    else if(q<0)                     q=-1;
-    return q;
 }
 /* ================================================ */
 //  Pass mll cut
