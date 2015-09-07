@@ -6,6 +6,7 @@
 #include "SusyNtuple/SusyDefs.h"
 #include "SusyNtuple/AnalysisType.h"
 #include "SusyNtuple/SusyNtObject.h"
+#include "SusyNtuple/SusyNtTools.h"
 
 
 namespace Susy {
@@ -25,6 +26,10 @@ namespace Susy {
         Link to the SusyNtObject that we are reading in
         */
         SusyNtObject* nt;
+        /**
+        Linkn to the instance of SusyNtTools in SusyNtAna
+        */
+        SusyNtTools* tools;
         
         /**
         Link to the SusyNtuple objects
@@ -45,6 +50,7 @@ namespace Susy {
         JetVector*              baseJets;           ///< baseline jets
         JetVector*              jets;               ///< signal jets
 
+        TauVector*              preTaus;            ///< selection taus before OR
         TauVector*              baseTaus;           ///< basline taus
         TauVector*              taus;               ///< signal taus
 

@@ -29,7 +29,6 @@ Counter::Counter() :
 /* =================================================== */
 Counter& Counter::setAnalysis(const AnalysisType &a)
 {
-    m_anatype = a;
     switch(a) {
         case(AnalysisType::Ana_2Lep) :
         case(AnalysisType::Ana_2LepWH) : {
@@ -40,6 +39,10 @@ Counter& Counter::setAnalysis(const AnalysisType &a)
             m_triLep = true;
             break;
         }
+        case(AnalysisType::Ana_Stop2L) : {
+            m_dilepton = true;
+            break;
+        }
         case(AnalysisType::kUnknown) : {
             cout << "WARNING Counter::setAnalysis: AnalysisType::kUnknown" << endl;
             cout << "WARNING    --> Exitting." << endl;
@@ -47,6 +50,8 @@ Counter& Counter::setAnalysis(const AnalysisType &a)
             break;
         }  
     } // end switch
+
+    m_anatype = a;
 
     return *this;
 }
@@ -198,12 +203,40 @@ void Counter::constructCounters(const Cutflow &c)
 bool Counter::pass_eventCleaning(Link* link)
 {
     int iEventCut=0;
+
     // count number read-in
     m_cleaningCounters[iEventCut]++;    iEventCut++;
     //debug
-    //Counter::dumpThisInfo(link);
+     Counter::dumpThisCut(link);
 
     int flags = link->nt->evt()->cutFlags[NtSys::SusyNtSys::NOM]; 
+    // grl
+    if(!link->tools->passGRL(flags))                    return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
+    // lar error
+    if(!link->tools->passLarErr(flags))                 return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
+    // tile error
+    if(!link->tools->passTileErr(flags))                return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
+    // ttc veto
+    if(!link->tools->passTTC(flags))                    return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
+    // good vertex
+    if(!link->tools->passGoodVtx(flags))                return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
+    // bad muon
+    if(!link->tools->passBadMuon(*link->preMuons))       return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
+    // cosmic muon
+    if(!link->tools->passCosmicMuon(*link->baseMuons))   return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
+    // jet cleaning
+    if(!link->tools->passJetCleaning(*link->baseJets))    return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
+
+/*
+ * Prior to August 17 2015
     // grl
     if(!(flags & ECut_GRL))             return false;
     m_cleaningCounters[iEventCut]++;    iEventCut++; 
@@ -220,15 +253,41 @@ bool Counter::pass_eventCleaning(Link* link)
     if(!(flags & ECut_GoodVtx))         return false;
     m_cleaningCounters[iEventCut]++;    iEventCut++;
     // bad muon
-    if(!(flags & ECut_BadMuon))         return false;
+    bool pass_badMuon = true;
+    for(uint imu=0; imu<link->preMuons->size();imu++){
+        Muon* mu = link->preMuons->at(imu);
+        bool passId  = false;
+        bool passPt  = false;
+        bool passEta = false;
+        if(mu->loose) passId = true;
+        if(mu->Pt()>10.) passPt = true;
+        if(fabs(mu->Eta())<2.5) passEta = true;
+        if(passId && passPt && passEta) {
+            if(mu->isBadMuon) { pass_badMuon = false; break; }
+        }
+    } // imu
+    if(!pass_badMuon) return false;
+        
+//    bool pass_badMuon = true;
+//    for(uint imu=0; imu<link->baseMuons->size(); imu++){
+//        if(link->baseMuons->at(imu)->isBadMuon) { pass_badMuon = false; break; }
+//    }
+//    if(!pass_badMuon) { dumpThisInfo(link); return false; }
+//    if(!(flags & ECut_BadMuon))      {   return false; dumpThisInfo(link); }
     m_cleaningCounters[iEventCut]++;    iEventCut++;
-    // cosmic muons
+//    // cosmic muons
+//    bool pass_cosmic = true;
+//    for(uint imu=0; imu<link->baseMuons->size();imu++){
+//        Muon* mu = link->baseMuons->at(imu);
+//        if(mu->isCosmic) { pass_cosmic = false; break; } 
+//    }
+//    if(!pass_cosmic) return false;
     if(!(flags & ECut_Cosmic))          return false;
     m_cleaningCounters[iEventCut]++;    iEventCut++;
     // jet cleaning
     if(!(flags & ECut_BadJet))          return false;
     m_cleaningCounters[iEventCut]++;    iEventCut++;
-
+*/
 
     // passed event cleaning
     return true;
@@ -266,17 +325,47 @@ bool Counter::pass_cutflow(Link* link)
 /* =================================================== */
 bool Counter::pass_Stop2l_ME(Link* link)
 {
+    MuonVector tmpMuons;
+    for(uint im=0; im<link->baseMuons->size(); im++){
+        if(fabs(link->baseMuons->at(im)->Eta())<2.4) tmpMuons.push_back(link->baseMuons->at(im));
+    }
+    std::sort(tmpMuons.begin(), tmpMuons.end(), comparePt);
+    link->baseMuons->clear();
+    link->baseMuons = &tmpMuons;
+
+    MuonVector tmpSigMuons;
+    for(uint im=0; im<link->muons->size(); im++){
+        if(fabs(link->muons->at(im)->Eta())<2.4) tmpSigMuons.push_back(link->muons->at(im));
+    }
+    std::sort(tmpSigMuons.begin(), tmpSigMuons.end(), comparePt);
+    link->muons->clear();
+    link->muons = &tmpSigMuons;
+
+    LeptonVector tmpBaseLeps;
+    LeptonVector tmpSigLeps;
+    link->tools->buildLeptons(tmpBaseLeps, *link->baseElectrons, *link->baseMuons);
+    link->tools->buildLeptons(tmpSigLeps, *link->electrons, *link->muons);
+    link->baseLeptons->clear();
+    link->baseLeptons = &tmpBaseLeps;
+    link->leptons->clear();
+    link->leptons = &tmpSigLeps;
+
     for(uint ireg=0; ireg < cutflowLabels(m_cutflow).size(); ireg++){
         int iCut=0;
         m_selector.setCutflow(m_cutflow).buildRegion(ireg);
         if(ireg==0) { // bypass the fact that the OS and SS are different regions and just fill their respective counters based on the signedness 
+
+            //Counter::dumpThisCut(link);
+
             if(!m_selector.pass_minNBase(link)) return false; 
             getLeptonFlavor(link);
             int same_sign = m_selector.leptonSign(link);
             if(same_sign)          m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
             else if(!same_sign)    m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
             iCut++;
-
+            //if(!same_sign && m_lepchan==LeptonChan::DF)
+            //Counter::dumpThisCut(link);
+            
             if(!m_selector.pass_baseNLep(link)) return false;
             getLeptonFlavor(link);
             same_sign = m_selector.leptonSign(link);
@@ -298,6 +387,9 @@ bool Counter::pass_Stop2l_ME(Link* link)
             if(same_sign)  m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
             if(!same_sign) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
             iCut++;
+           
+            /// dump with Serhan Sep 3 
+            //if(m_lepchan==LeptonChan::DF && !same_sign) Counter::dumpThisCut(link);
 
         } // ireg==0
     }
@@ -382,65 +474,166 @@ void Counter::dumpThisCut(Link* link)
 {
     outfile.open(debug_name.c_str(), ios::app | ios::out);
     int eventno = link->nt->evt()->eventNumber;
-    outfile<<"EventNumber: " << eventno;
-    for(uint il = 0; il<link->baseLeptons->size(); il++){
-        outfile << "          lep("  << il << ")  id: " << (link->baseLeptons->at(il)->isEle() ? 11 : 13) << "  q: " << link->baseLeptons->at(il)->q;
-    //    outfile << "  pt: " << link->baseLeptons->at(il)->Pt() << "  eta: " << link->baseLeptons->at(il)->Eta() << "  phi: " << link->baseLeptons->at(il)->Phi();
-    }
-    outfile << "        sign: " << m_selector.leptonSign(link);
-    outfile << endl;
-    outfile.close();
-    
-/*    lept1Pt = link->leptons ->at(0)->Pt();
-    lept1Eta = link->leptons->at(0)->Eta();
-    lept1Phi = link->leptons->at(0)->Phi();
-    lept2Pt = link->leptons ->at(1)->Pt();
-    lept2Eta = link->leptons->at(1)->Eta();
-    lept2Phi = link->leptons->at(1)->Phi();
+    if(eventno== 7631994) {
+        outfile << eventno << "    " << endl;
+        for(uint i = 0; i < link->baseJets->size(); i++){
+            outfile << "    " << "j[" << i << "]   pt: " << link->baseJets->at(i)->Pt() << "  eta: " << link->baseJets->at(i)->Eta() << "  phi: " << link->baseJets->at(i)->Phi() << endl;
+        }
+    /*
+        for(uint il=0; il<link->preLeptons->size(); il++){
+            Susy::Lepton ilep = *link->preLeptons->at(il);
+            int iid = ilep.isEle() ? 11 : 13;
+            int iq = ilep.q;
+            iid *= iq;
+            for(uint jl=il+1; jl<link->preLeptons->size(); jl++){        
+                Susy::Lepton jlep = *link->preLeptons->at(jl);
+                int jid = jlep.isEle() ? 11 : 13;
+                int jq = jlep.q;
+                jid *= jq;
+                outfile << "    " << "lep["<<il<<","<<jl<<"]  dRy=" << ilep.DeltaRy(jlep) << "  (id1, id2) = (" << iid << "," << jid<<")" <<endl; 
+            } // jl
+            for(uint ijet=0; ijet<link->preJets->size(); ijet++){
+                Susy::Jet jet = *link->preJets->at(ijet);
+                outfile << "    " << "lepjet["<<il<<","<<ijet<<"]  dRy=" << ilep.DeltaRy(jet) << "  (idlep, jpt) = (" << iid << ", " << jet.Pt() << ")" << endl;
+            } // ijet
+        } // il
+    */
 
-    id0 = link->leptons ->at(0)->isEle() ? 11 : 13;
-    id1 = link->leptons ->at(1)->isEle() ? 11 : 13;
-    
-    id0 *= link->leptons->at(0)->q;
-    id1 *= link->leptons->at(1)->q;
-    
-    
-    outfile<<"EventNumber: " << eventno;
-         //  <<"  (pt0,pt1)=("<<lept1Pt<<", "<<lept2Pt<<")"
-         //  <<"  (eta0,eta1)=("<<lept1Eta<<", "<<lept2Eta<<")"
-         //  <<"  (phi0,phi1)=("<<lept1Phi<<", "<<lept2Phi<<")"
-         //  <<"  (id0,id1)=("<<id0<<", "<<id1<<")";
-    outfile<<endl;
+   //     for(uint il = 0; il<link->baseLeptons->size(); il++){ 
+   //         int id = link->baseLeptons->at(il)->isEle() ? 11 : 13;
+   //         int q = link->baseLeptons->at(il)->q;
+   //         id *= q;
+   //         float pt = link->baseLeptons->at(il)->Pt();
+   //         float eta = link->baseLeptons->at(il)->Eta();
+   //         outfile << "lep("<<il<<") id: " << id<<"  (pt,eta):("<<pt<<", "<<eta <<")  | ";
+   //     }
+        outfile << endl;
+    }
+ //   for(uint il = 0; il<link->baseLeptons->size(); il++){
+ //       int id = link->baseLeptons->at(il)->isEle() ? 11 : 13;
+ //       int q = link->baseLeptons->at(il)->q;
+ //       id *= q;
+ //       outfile << " lep("<<il<<") id: "<<id<<"  (pt,eta):("<<link->baseLeptons->at(il)->Pt()<<","<<link->baseLeptons->at(il)->Eta()<<") | ";
+ //   }
+ //   outfile << endl;
     outfile.close();
-*/
+    
 }
 void Counter::dumpThisInfo(Link* link)
 {
-//    vector<int> me_events = { 1405480, 1406138, 458522, 1405485, 1405423,
-//                                671716, 458577, 458557, 1406102, 1405606,
-//                                1405608, 1405694,  671755 };
-//    
-    outfile.open(debug_name.c_str(), ios::app | ios::out);
-    int eventno = link->nt->evt()->eventNumber;
-     //   outfile<<eventno<<endl;
+//    vector<int> me_events = { 8058946, 8028797, 8029450 };
+// 
+//    outfile.open(debug_name.c_str(), ios::app | ios::out);
+//    int eventno = link->nt->evt()->eventNumber;
 //    for(uint iev=0; iev<me_events.size(); iev++){
-//        if(eventno==me_events[iev]){
-//  //  if(find(me_events.begin(), me_events.end(), eventno)!=me_events.end()){
-    float muPt, muEta, muPhi;
-    for(uint imu=0; imu<link->preMuons->size(); imu++){
-        Susy::Muon* mu = link->preMuons->at(imu);
-      //  if(mu->isBadMuon){
-            int isbad = mu->isBadMuon ? 1 : 0;
-      //      int nmu = link->baseMuons->size();
-     //       outfile << "nmu: " << nmu << "  ";
-            muPt = mu->Pt();
-            muEta = mu->Eta();
-            muPhi = mu->Phi();
-            outfile<<"Event: " << eventno <<"  muon pt: " << muPt<<"  muon phi: " << muPhi<<"  muon eta: " << muEta << "  isBad: "<<isbad << endl;;
-      }
-//    }
-//    }
-            outfile.close();
+//        if(eventno == me_events[iev]){
+//            outfile << "eventno: " << eventno << endl;
+//            for(uint imu = 0; imu<link->preMuons->size(); imu++){
+//                Susy::Muon* mu = link->preMuons->at(imu);
+//                float pt, eta, phi;
+//                bool base, bad, cosmic;
+//                pt = mu->Pt();
+//                eta = mu->Eta();
+//                phi = mu->Phi();
+//                base = mu->isBaseline;
+//                bad = mu->isBadMuon;
+//                cosmic = mu->isCosmic;
+//                outfile << "      mu[" << imu << "]  pt: " << pt << "  eta: " << eta;
+//                outfile        << "  phi: " << phi << "  baseline: " << base << "  bad: " << bad;
+//                outfile        << "  cosmic: " << cosmic << endl;
+//            } //imu
+//        }
+//    } // ev
+
+    //vector<int> me_events = {8028653, 7586123};
+    vector<int> me_events = {7631994};
+    int eventno = link->nt->evt()->eventNumber;
+    for(uint iev=0; iev<me_events.size(); iev++){
+    if(eventno == me_events[iev]){
+        outfile.open(debug_name.c_str(), ios::app | ios::out); 
+        outfile<<"eventno: " << eventno << endl;
+
+        // get the dudes prior to OR
+        ElectronVector preElectrons = *link->preElectrons;
+        MuonVector preMuons         = *link->preMuons;
+        JetVector preJets           = *link->preJets;
+        TauVector preTaus           ;
+
+        ElectronVector baseElectrons    ;
+        MuonVector     baseMuons        ;
+        JetVector baseJets              ;
+        TauVector baseTaus              ;
+
+        link->tools->getBaselineObjects(preElectrons, preMuons, preJets, preTaus,
+                                        baseElectrons, baseMuons, baseJets, baseTaus);
+
+        LeptonVector baseLeps;
+        link->tools->buildLeptons(baseLeps, baseElectrons, baseMuons);
+        for(uint im=0; im<preMuons.size();im++){
+            Susy::Muon* mu = preMuons[im];
+            float pt = mu->Pt();
+            float eta = mu->Eta();
+            float phi = mu->Phi();
+            bool isBase = link->tools->m_muonSelector.isBaselineMuon(mu);
+            outfile<<"       mu["<<im<<"]   pt: " << pt << "  eta: " << eta << "  phi: " << phi << "  base: " << isBase << endl; 
+        } // im
+
+//        for(uint il=0; il<baseLeps.size(); il++){
+//            Susy::Lepton* ilep = baseLeps[il];
+//            int iid = ilep->isEle() ? 11 : 13;
+//            iid *= ilep->q;
+//            float ipt = ilep->Pt();
+//            float ieta = ilep->Eta(); 
+//            float iphi = ilep->Phi();
+//            float irap = ilep->Rapidity();
+//        //    for(uint ij=0; ij<baseJets.size(); ij++){
+//        //        Susy::Jet* j = baseJets[ij];
+//        //        float jpt = j->Pt();
+//        //        float jeta = j->Eta();
+//        //        float jphi = j->Phi();
+//        //        float jrap = j->Rapidity();
+//        //        float dR = ilep->DeltaR(*j);
+//        //        float dphi = TVector2::Phi_mpi_pi(jphi-iphi);
+//        //        float drap = jrap - irap;
+//        //        float dRy = TMath::Sqrt(dphi*dphi + drap*drap);
+//        //        outfile<<"    deltaRy(lep["<<il<<"],jet["<<ij<<"]) = "<<dRy<<endl;
+//        //        outfile<<"                lep id: " << iid << " (pt,eta,phi)=("<<ipt<<","<<ieta<<","<<iphi<<")   jet (pt,eta,phi)=("<<jpt<<","<<jeta<<","<<jphi<<")"<<endl;
+//            for(uint jl=il+1; jl<baseLeps.size(); jl++){
+//                Susy::Lepton* jlep = baseLeps[jl];
+//                int jid = jlep->isEle() ? 11 : 13;
+//                jid *= jlep->q;
+//                float jpt = jlep->Pt();
+//                float jeta = jlep->Eta();
+//                float jphi = jlep->Phi();
+//                float jrap = jlep->Rapidity();
+//
+//               // float dphi = iphi - jphi;
+//                float dphi = TVector2::Phi_mpi_pi(iphi-jphi);
+//                float drap = irap - jrap;
+//                float dRy = TMath::Sqrt(dphi*dphi + drap*drap);
+//
+//                float dR = ilep->DeltaR(*jlep);
+//                outfile<<"    lep("<<il<<"):  pt: " << ipt << "  eta: " << ieta << "  phi: " << iphi << "  rap: "<< irap <<"  id: " << iid << endl;
+//                outfile<<"    lep("<<jl<<"):  pt: " << jpt << "  eta: " << jeta << "  phi: " << jphi << "  rap: "<<jrap <<"  id: " << jid << endl;
+//                outfile<<"    deltaR("<<il<<","<<jl<<") = "<<dR<<"  deltaRy = " << dRy << endl;
+//            } // jl
+//        } // il
+//
+//        link->tools->m_overlapTool.performOverlap(baseElectrons, baseMuons,baseTaus, baseJets);
+//        for(uint ie=0; ie<baseElectrons.size(); ie++){
+//            outfile << "POST OR"<<endl;
+//            outfile << "POST OR"<<endl;
+//            outfile << "POST OR"<<endl;
+//            outfile<<"     ele["<<ie<<"]   (pt,eta,phi) = (" << baseElectrons[ie]->Pt() << ","<<baseElectrons[ie]->Eta()<<","<<baseElectrons[ie]->Phi() <<")" << endl;
+//        }
+//        for(uint ij=0;ij<baseJets.size();ij++){
+//            outfile <<"     jet["<<ij<<"]   (pt,eta,phi) = (" << baseJets[ij]->Pt() << ","<<baseJets[ij]->Eta()<<","<<baseJets[ij]->Phi() <<")" << endl;
+//        }
+                
+        
+        outfile.close();
+    } // eventno
+    } // iev
 }
         
 

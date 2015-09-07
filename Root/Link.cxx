@@ -9,6 +9,7 @@ Link::Link() :
     isMC(false),
     anatype(AnalysisType::kUnknown),
     nt(NULL),
+    tools(NULL),
     preElectrons(NULL),
     baseElectrons(NULL),
     electrons(NULL),
@@ -21,6 +22,7 @@ Link::Link() :
     preJets(NULL),
     baseJets(NULL),
     jets(NULL),
+    preTaus(NULL),
     baseTaus(NULL),
     taus(NULL),
     met(NULL)
@@ -34,6 +36,7 @@ Link::~Link()
     isMC=false;
     anatype = AnalysisType::kUnknown;
     nt=NULL;
+    tools=NULL;
     preElectrons=NULL;
     baseElectrons=NULL;
     electrons=NULL;
@@ -46,6 +49,7 @@ Link::~Link()
     preJets=NULL;
     baseJets=NULL;
     jets=NULL;
+    preTaus=NULL;
     baseTaus=NULL;
     taus=NULL;
     met=NULL;

@@ -74,7 +74,7 @@ namespace Susy {
             debug output file
         */
         std::fstream outfile;
-        std::string debug_name = "dantrim_sigLep_May12.txt";
+        std::string debug_name = "dantrim_badmu_Aug13.txt";
         // dummy
         int m_dummy;
 

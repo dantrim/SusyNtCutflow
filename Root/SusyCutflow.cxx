@@ -42,6 +42,14 @@ SusyCutflow& SusyCutflow::setAnalysis(const AnalysisType &a)
             cout << "SusyCutflow::setAnalysis: AnalysisType::Ana_2LepWH" << endl;
             break;
         }
+        case(AnalysisType::Ana_SS3L) : {
+            cout << "SusyCutflow::setAnalysis: AnalysisType::Ana_SS3L" << endl;
+            break;
+        }
+        case(AnalysisType::Ana_Stop2L) : {
+            cout << "SusyCutflow::setAnalysis: AnalysisType::Ana_Stop2L" << endl;
+            break;
+        }
         case(AnalysisType::kUnknown) : {
             cout << "WARNING SusyCutflow::setAnalysis: AnalysisType::kUnknown" << endl;
             cout << "WARNING    --> Exitting." << endl;
@@ -130,6 +138,7 @@ void SusyCutflow::linkNtObjects(Link* link)
 {
     link->anatype           = m_anatype;
     link->nt                = &nt;
+    link->tools             = &m_nttools;
     
     link->preElectrons      = &m_preElectrons;
     link->baseElectrons     = &m_baseElectrons;
@@ -139,6 +148,7 @@ void SusyCutflow::linkNtObjects(Link* link)
     link->baseMuons         = &m_baseMuons;
     link->muons             = &m_signalMuons;
         
+    link->preLeptons        = &m_preLeptons;
     link->baseLeptons       = &m_baseLeptons;
     link->leptons           = &m_signalLeptons;
     
