@@ -8,6 +8,7 @@ namespace Susy
 {
     enum class Cutflow {
         Stop2l_ME=0
+        ,Serhan
         ,kUnknown
     };
     std::string Cutflow2str(const Cutflow &c);

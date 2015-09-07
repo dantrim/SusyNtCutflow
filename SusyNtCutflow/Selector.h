@@ -43,6 +43,12 @@ namespace Susy {
         
         bool pass_minMll(Link* link);
         bool pass_minMet(Link* link);
+
+        bool pass_R1(Link* link, float threshold=0.0, bool thresh_is_min=true);
+        bool pass_mt2(Link* link, float threshold=0.0, bool thresh_is_min=true);
+        bool pass_deltaX(Link* link, float threshold=0.0, bool thresh_is_min=true);
+        bool pass_R2(Link* link, float threshold=0.0, bool thresh_is_min=true);
+        bool pass_cosThetaB(Link* link, float threshold=0.0, bool thresh_is_min=true);
     
 
         protected :

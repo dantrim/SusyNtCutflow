@@ -138,6 +138,46 @@ const vector<vector<string>> Counter::cutflowLabels(const Cutflow &c)
     } // end case Stop2L_ME
 
     //////////////////////////////////////
+    // SerhanCheck
+    // (Cutflow with Serhan)
+    //////////////////////////////////////
+    case(Cutflow::Serhan) : {
+        //
+        // OS selection
+        //
+        m_regions.push_back("Serhan-OS");
+        std::vector<std::string> os_labels;
+        os_labels.push_back(">=1 baseline lepton");
+        os_labels.push_back("==2 baseline leptons");
+        os_labels.push_back("==2 signal leptons");
+        os_labels.push_back("mll>20 GeV");
+        os_labels.push_back("met>40 GeV");
+        os_labels.push_back("R1>0.2");
+        os_labels.push_back("mT2>20.0 GeV");
+        os_labels.push_back("|deltaX|<0.05");
+        os_labels.push_back("R2>0.5");
+        os_labels.push_back("|cosThetaB|<0.8");
+        labels.push_back(os_labels);
+        //
+        // SS selection
+        //
+        m_regions.push_back("Serhan-SS");
+        std::vector<std::string> ss_labels;
+        ss_labels.push_back(">=1 baseline lepton");
+        ss_labels.push_back("==2 baseline leptons");
+        ss_labels.push_back("==2 signal leptons");
+        ss_labels.push_back("mll>20 GeV");
+        ss_labels.push_back("met>40 GeV");
+        ss_labels.push_back("R1>0.2");
+        ss_labels.push_back("mT2>20.0 GeV");
+        ss_labels.push_back("|deltaX|<0.05");
+        ss_labels.push_back("R2>0.5");
+        ss_labels.push_back("|cosThetaB|<0.8");
+        labels.push_back(ss_labels);
+        break;
+    } // end case Serhan
+
+    //////////////////////////////////////
     // Unknown
     //////////////////////////////////////
     case(Cutflow::kUnknown) : {
@@ -185,6 +225,22 @@ void Counter::constructCounters(const Cutflow &c)
             break;
     }
     //////////////////////////////////////
+    // SerhanCheck
+    // Cutflow with Serhan
+    //////////////////////////////////////
+        case(Cutflow::Serhan) : {
+            //
+            // set dilepton counters
+            //
+            for(unsigned int iReg=0; iReg<cutflowLabels(c).size(); iReg++){
+            for(unsigned int iCut=0; iCut<cutflowLabels(c)[iReg].size(); iCut++){
+                m_dileptonCounters[iReg][iCut][LeptonChan2idx(LeptonChan::SF)] = 0.0;
+                m_dileptonCounters[iReg][iCut][LeptonChan2idx(LeptonChan::DF)] = 0.0;
+            } // iCut
+            } // iReg
+            break;
+    }
+    //////////////////////////////////////
     // Unknown
     //////////////////////////////////////
     case(Cutflow::kUnknown) : {
@@ -207,7 +263,7 @@ bool Counter::pass_eventCleaning(Link* link)
     // count number read-in
     m_cleaningCounters[iEventCut]++;    iEventCut++;
     //debug
-     Counter::dumpThisCut(link);
+    // Counter::dumpThisCut(link);
 
     int flags = link->nt->evt()->cutFlags[NtSys::SusyNtSys::NOM]; 
     // grl
@@ -235,60 +291,6 @@ bool Counter::pass_eventCleaning(Link* link)
     if(!link->tools->passJetCleaning(*link->baseJets))    return false;
     m_cleaningCounters[iEventCut]++;                    iEventCut++;
 
-/*
- * Prior to August 17 2015
-    // grl
-    if(!(flags & ECut_GRL))             return false;
-    m_cleaningCounters[iEventCut]++;    iEventCut++; 
-    // lar error
-    if(!(flags & ECut_LarErr))          return false;
-    m_cleaningCounters[iEventCut]++;    iEventCut++;
-    // tile error
-    if(!(flags & ECut_TileErr))         return false;
-    m_cleaningCounters[iEventCut]++;    iEventCut++;
-    // ttc veto
-    if(!(flags & ECut_TTC))             return false;
-    m_cleaningCounters[iEventCut]++;    iEventCut++;
-    // good vertex
-    if(!(flags & ECut_GoodVtx))         return false;
-    m_cleaningCounters[iEventCut]++;    iEventCut++;
-    // bad muon
-    bool pass_badMuon = true;
-    for(uint imu=0; imu<link->preMuons->size();imu++){
-        Muon* mu = link->preMuons->at(imu);
-        bool passId  = false;
-        bool passPt  = false;
-        bool passEta = false;
-        if(mu->loose) passId = true;
-        if(mu->Pt()>10.) passPt = true;
-        if(fabs(mu->Eta())<2.5) passEta = true;
-        if(passId && passPt && passEta) {
-            if(mu->isBadMuon) { pass_badMuon = false; break; }
-        }
-    } // imu
-    if(!pass_badMuon) return false;
-        
-//    bool pass_badMuon = true;
-//    for(uint imu=0; imu<link->baseMuons->size(); imu++){
-//        if(link->baseMuons->at(imu)->isBadMuon) { pass_badMuon = false; break; }
-//    }
-//    if(!pass_badMuon) { dumpThisInfo(link); return false; }
-//    if(!(flags & ECut_BadMuon))      {   return false; dumpThisInfo(link); }
-    m_cleaningCounters[iEventCut]++;    iEventCut++;
-//    // cosmic muons
-//    bool pass_cosmic = true;
-//    for(uint imu=0; imu<link->baseMuons->size();imu++){
-//        Muon* mu = link->baseMuons->at(imu);
-//        if(mu->isCosmic) { pass_cosmic = false; break; } 
-//    }
-//    if(!pass_cosmic) return false;
-    if(!(flags & ECut_Cosmic))          return false;
-    m_cleaningCounters[iEventCut]++;    iEventCut++;
-    // jet cleaning
-    if(!(flags & ECut_BadJet))          return false;
-    m_cleaningCounters[iEventCut]++;    iEventCut++;
-*/
-
     // passed event cleaning
     return true;
 }
@@ -304,6 +306,13 @@ bool Counter::pass_cutflow(Link* link)
         ////////////////////////////////
         case(Cutflow::Stop2l_ME) : {
             if(!pass_Stop2l_ME(link)) pass = false;
+            break;
+        }
+        //////////////////////////////////////
+        // Serhan
+        //////////////////////////////////////
+        case(Cutflow::Serhan) : {
+            if(!pass_SerhanCutflow(link)) pass = false;
             break;
         }
         //////////////////////////////////////
@@ -395,21 +404,125 @@ bool Counter::pass_Stop2l_ME(Link* link)
     }
     return true;
 }
+/* =================================================== */
+//  Cuts for cutflow with Serhan
+/* =================================================== */
+bool Counter::pass_SerhanCutflow(Link* link)
+{
+    MuonVector tmpMuons;
+    for(uint im=0; im<link->baseMuons->size(); im++){
+        if(fabs(link->baseMuons->at(im)->Eta())<2.4) tmpMuons.push_back(link->baseMuons->at(im));
+    }
+    std::sort(tmpMuons.begin(), tmpMuons.end(), comparePt);
+    link->baseMuons->clear();
+    link->baseMuons = &tmpMuons;
 
+    MuonVector tmpSigMuons;
+    for(uint im=0; im<link->muons->size(); im++){
+        if(fabs(link->muons->at(im)->Eta())<2.4) tmpSigMuons.push_back(link->muons->at(im));
+    }
+    std::sort(tmpSigMuons.begin(), tmpSigMuons.end(), comparePt);
+    link->muons->clear();
+    link->muons = &tmpSigMuons;
+
+    LeptonVector tmpBaseLeps;
+    LeptonVector tmpSigLeps;
+    link->tools->buildLeptons(tmpBaseLeps, *link->baseElectrons, *link->baseMuons);
+    link->tools->buildLeptons(tmpSigLeps, *link->electrons, *link->muons);
+    link->baseLeptons->clear();
+    link->baseLeptons = &tmpBaseLeps;
+    link->leptons->clear();
+    link->leptons = &tmpSigLeps;
+
+    for(uint ireg=0; ireg < cutflowLabels(m_cutflow).size(); ireg++) {
+        int iCut=0;
+        m_selector.setCutflow(m_cutflow).buildRegion(ireg);
+        if(ireg==0) { // bypass the fact that the OS and SS are different regions
+                if(!m_selector.pass_minNBase(link)) return false; 
+                getLeptonFlavor(link, false);
+                int same_sign = m_selector.leptonSign(link);
+                if(same_sign)          m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+                else if(!same_sign)    m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+                iCut++;
+
+                if(!m_selector.pass_baseNLep(link)) return false;
+                getLeptonFlavor(link, false);
+                same_sign = m_selector.leptonSign(link);
+                if(same_sign) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+                if(!same_sign) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+                iCut++;
+                
+                if(!m_selector.pass_sigNLep(link)) return false;
+                if(same_sign) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+                if(!same_sign) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+                iCut++;
+
+                if(!m_selector.pass_minMll(link)) return false;
+                if(same_sign) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+                if(!same_sign) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+                iCut++; 
+
+                if(!m_selector.pass_minMet(link)) return false;
+                if(same_sign)  m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+                if(!same_sign) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+                iCut++;
+
+                if(!m_selector.pass_R1(link, 0.2, true)) return false;
+                if(same_sign) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+                if(!same_sign) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+                iCut++;
+
+                if(!m_selector.pass_mt2(link, 20, true)) return false;
+                if(same_sign) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+                if(!same_sign) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+                iCut++;
+
+                if(!m_selector.pass_deltaX(link, 0.05, false)) return false;
+                if(same_sign) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+                if(!same_sign) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+                iCut++;
+
+                if(!m_selector.pass_R2(link, 0.5, true)) return false;
+                if(same_sign) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+                if(!same_sign) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+                iCut++;
+
+                if(!m_selector.pass_cosThetaB(link, 0.8, false)) return false;
+                if(same_sign) m_dileptonCounters[1][iCut][LeptonChan2idx(m_lepchan)]++;
+                if(!same_sign) m_dileptonCounters[0][iCut][LeptonChan2idx(m_lepchan)]++;
+                iCut++;
+        } // if ireg == 0
+    } // ireg
+
+    return true;
+}
 /* =================================================== */
 //  Get the "dilepton" flavor for >= 1 baselepton
 /* =================================================== */
-void Counter::getLeptonFlavor(Link* link)
+void Counter::getLeptonFlavor(Link* link, bool useSignal)
 {
-    if(link->baseLeptons->size()==1) m_lepchan = LeptonChan::SF;
-    else{
-        int nlep = link->baseLeptons->size();
-        int ne   = link->baseElectrons->size();
-        int nm   = link->baseMuons->size();
-        if(ne==0 && nlep>1) m_lepchan = LeptonChan::SF;
-        else if(nm==0 && nlep>1) m_lepchan = LeptonChan::SF;
-        else if(nlep>1) m_lepchan = LeptonChan::DF;
-    }
+    if(!useSignal) {
+        if(link->baseLeptons->size()==1) m_lepchan = LeptonChan::SF;
+        else{
+            int nlep = link->baseLeptons->size();
+            int ne   = link->baseElectrons->size();
+            int nm   = link->baseMuons->size();
+            if(ne==0 && nlep>1) m_lepchan = LeptonChan::SF;
+            else if(nm==0 && nlep>1) m_lepchan = LeptonChan::SF;
+            else if(nlep>1) m_lepchan = LeptonChan::DF;
+        }
+    } // !useSignal
+    else {
+        if(link->leptons->size()==1) m_lepchan = LeptonChan::SF;
+        else {
+            int nlep = link->leptons->size();
+            int ne = link->electrons->size();
+            int nm = link->muons->size();
+            if(ne==0 && nlep>1) m_lepchan = LeptonChan::SF;
+            else if(nm==0 && nlep>1) m_lepchan = LeptonChan::SF;
+            else if(nlep>1) m_lepchan = LeptonChan::DF;
+        }
+    } // useSignal
 }
 
 /* =================================================== */

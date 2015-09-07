@@ -60,6 +60,7 @@ namespace Susy {
         // Regions
         //
         bool pass_Stop2l_ME(Link* link);
+        bool pass_SerhanCutflow(Link* link);
 
 
         /**
@@ -67,7 +68,7 @@ namespace Susy {
         */
         void dumpThisCut(Link* link);
         void dumpThisInfo(Link* link);
-        void  getLeptonFlavor(Link* link); 
+        void  getLeptonFlavor(Link* link, bool useSignal=false); 
 
 
         /**

@@ -101,6 +101,7 @@ int main(int argc, char** argv)
     //  Set the cutflow
     /* ============================================ */
     if(cutflow.find("Stop2l_ME")!=string::npos) susyAna->setCutflow(Cutflow::Stop2l_ME);
+    if(cutflow.find("Serhan")!=string::npos) susyAna->setCutflow(Cutflow::Serhan);
 
     // Run job
     if(nEvt<0) nEvt = nEntries;
