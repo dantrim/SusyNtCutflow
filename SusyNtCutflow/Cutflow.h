@@ -7,8 +7,9 @@
 namespace Susy
 {
     enum class Cutflow {
-        Stop2l_ME=0
-        ,Serhan
+        Stop2l_ME=0 // cutflow with Marialea 
+        ,Serhan // cutflow with Serhan
+        ,SUSY // cutflow for SUSY Analsysis at [1]
         ,kUnknown
     };
     std::string Cutflow2str(const Cutflow &c);
@@ -32,3 +33,6 @@ namespace Susy
 }
 
 #endif
+
+
+// [1] https://docs.google.com/spreadsheets/d/1LNAzqtr4PY1OGIRgYxDQ6WJERN5_AdSF3oYB1GeJI0M/edit?pli=1#gid=1666199485

@@ -1,6 +1,6 @@
 // SusyNtCutflow
 #include "SusyNtCutflow/Selector.h"
-#include "SusyNtuple/SusyKin.h"
+#include "SusyNtuple/KinematicTools.h"
 
 
 using namespace std;
@@ -59,7 +59,8 @@ Selector& Selector::buildRegion(int ireg)
         /////////////////////////
         // Serhan
         /////////////////////////
-        case(Cutflow::Serhan) : {
+        case(Cutflow::Serhan) : 
+        case(Cutflow::SUSY) : {
             if(ireg==0) // OS
             {
                 m_minPtBaseLep   = 10; // GeV
@@ -165,7 +166,7 @@ bool Selector::pass_minMet(Link* link)
 /* ================================================ */
 bool Selector::pass_R1(Link* link, float threshold, bool thresh_is_min)
 {
-    float meff = SusyKin::Meff(*link->leptons, *link->jets, link->met, 0.0);
+    float meff = kin::Meff(*link->leptons, *link->jets, link->met, 0.0);
     float r1 = link->met->Et / meff * 1.0;
     if(thresh_is_min) { return (r1 > threshold); }
     else { return (r1 < threshold); }
@@ -175,7 +176,7 @@ bool Selector::pass_R1(Link* link, float threshold, bool thresh_is_min)
 /* ================================================ */
 bool Selector::pass_mt2(Link* link, float threshold, bool thresh_is_min)
 {
-    float mt2 = SusyKin::getMT2(*link->leptons, link->met);
+    float mt2 = kin::getMT2(*link->leptons, link->met);
     if(thresh_is_min) { return (mt2 > threshold); }
     else { return (mt2 < threshold); }
 }

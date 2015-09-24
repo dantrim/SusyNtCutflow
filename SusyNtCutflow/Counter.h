@@ -61,6 +61,7 @@ namespace Susy {
         //
         bool pass_Stop2l_ME(Link* link);
         bool pass_SerhanCutflow(Link* link);
+        bool pass_SUSYCutflow(Link* link);
 
 
         /**

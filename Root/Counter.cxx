@@ -90,12 +90,12 @@ const vector<string> Counter::eventCutflowLabels()
     labels.push_back("ttc veto");   
     // good vtx
     labels.push_back("good vertex");
+    // jet cleaning
+    labels.push_back("jet cleaning");
     // bad muon
     labels.push_back("bad muon");
     // cosmic muons
     labels.push_back("cosmic muon");
-    // jet cleaning
-    labels.push_back("jet cleaning");
 
     return labels;
 }
@@ -176,6 +176,17 @@ const vector<vector<string>> Counter::cutflowLabels(const Cutflow &c)
         labels.push_back(ss_labels);
         break;
     } // end case Serhan
+    //////////////////////////////////////
+    // SUSY Analysis
+    //////////////////////////////////////
+    case(Cutflow::SUSY) : {
+        m_regions.push_back("SUSY");
+        std::vector<std::string> cut_labels;
+        cut_labels.push_back("==1 baseline lepton");
+        cut_labels.push_back("==1 signal lepton");
+        labels.push_back(cut_labels);
+        break;
+    } // end case SUSY
 
     //////////////////////////////////////
     // Unknown
@@ -241,6 +252,21 @@ void Counter::constructCounters(const Cutflow &c)
             break;
     }
     //////////////////////////////////////
+    // SUSY
+    //////////////////////////////////////
+        case(Cutflow::SUSY) : {
+            //
+            // set dilepton counters but only use one TODO add single-level counter
+            //
+            for(unsigned int iReg=0; iReg<cutflowLabels(c).size(); iReg++){
+            for(unsigned int iCut=0; iCut<cutflowLabels(c)[iReg].size(); iCut++){
+                m_dileptonCounters[iReg][iCut][LeptonChan2idx(LeptonChan::SF)] = 0.0;
+                m_dileptonCounters[iReg][iCut][LeptonChan2idx(LeptonChan::DF)] = 0.0;
+            } // iCut
+            } // iReg
+            break;
+    }
+    //////////////////////////////////////
     // Unknown
     //////////////////////////////////////
     case(Cutflow::kUnknown) : {
@@ -281,14 +307,14 @@ bool Counter::pass_eventCleaning(Link* link)
     // good vertex
     if(!link->tools->passGoodVtx(flags))                return false;
     m_cleaningCounters[iEventCut]++;                    iEventCut++;
+    // jet cleaning
+    if(!link->tools->passJetCleaning(*link->baseJets))    return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
     // bad muon
     if(!link->tools->passBadMuon(*link->preMuons))       return false;
     m_cleaningCounters[iEventCut]++;                    iEventCut++;
     // cosmic muon
     if(!link->tools->passCosmicMuon(*link->baseMuons))   return false;
-    m_cleaningCounters[iEventCut]++;                    iEventCut++;
-    // jet cleaning
-    if(!link->tools->passJetCleaning(*link->baseJets))    return false;
     m_cleaningCounters[iEventCut]++;                    iEventCut++;
 
     // passed event cleaning
@@ -316,13 +342,19 @@ bool Counter::pass_cutflow(Link* link)
             break;
         }
         //////////////////////////////////////
+        // SUSY Analysis
+        //////////////////////////////////////
+        case(Cutflow::SUSY) : {
+            if(!pass_SUSYCutflow(link)) pass = false;
+            break;
+        }
+        //////////////////////////////////////
         // Unknown
         //////////////////////////////////////
         case(Cutflow::kUnknown) : {
             cout << "WARNING Counter::pass_cutflow: error. Uknown cutflow type." << endl;
             cout << "WARNING    --> Exitting." << endl;
             exit(1);
-            break;
         }
     } // end switch
 
@@ -495,6 +527,28 @@ bool Counter::pass_SerhanCutflow(Link* link)
     } // ireg
 
     return true;
+}
+/* =================================================== */
+// Get the cutflow for the SUSY Analysis Google Doc
+/* =================================================== */
+bool Counter::pass_SUSYCutflow(Link* link)
+{
+    for(uint ireg=0; ireg < cutflowLabels(m_cutflow).size(); ireg++){
+        int iCut=0;
+        m_selector.setCutflow(m_cutflow).buildRegion(ireg);
+        if(ireg==0) { // bypass the fact that the OS and SS are different regions and just fill their respective counters based on the signedness 
+            if(!(link->baseLeptons->size()==1)) return false;
+            m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+            iCut++;
+
+            if(!(link->leptons->size()==1)) return false;
+            m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+            iCut++;
+        } // ireg == 0
+    } // ireg
+
+    return true;
+
 }
 /* =================================================== */
 //  Get the "dilepton" flavor for >= 1 baselepton
@@ -687,7 +741,7 @@ void Counter::dumpThisInfo(Link* link)
             float pt = mu->Pt();
             float eta = mu->Eta();
             float phi = mu->Phi();
-            bool isBase = link->tools->m_muonSelector.isBaselineMuon(mu);
+            bool isBase = link->tools->muonSelector().isBaseline(mu);
             outfile<<"       mu["<<im<<"]   pt: " << pt << "  eta: " << eta << "  phi: " << phi << "  base: " << isBase << endl; 
         } // im
 
