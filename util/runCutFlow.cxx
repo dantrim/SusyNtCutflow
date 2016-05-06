@@ -95,8 +95,8 @@ int main(int argc, char** argv)
     /* ============================================ */
     //  Set the analysis type                        
     /* ============================================ */
-    susyAna->setAnalysis(AnalysisType::Ana_2Lep);
-    cout << "runCutflow: Setting analysis type to " << AnalysisType2str(AnalysisType::Ana_2Lep) << endl;
+    susyAna->setAnalysis(AnalysisType::Ana_Stop2L);
+    cout << "runCutflow: Setting analysis type to " << AnalysisType2str(AnalysisType::Ana_Stop2L) << endl;
     /* ============================================ */
     //  Set the cutflow
     /* ============================================ */
