@@ -25,6 +25,9 @@ Link::Link() :
     preTaus(NULL),
     baseTaus(NULL),
     taus(NULL),
+    prePhotons(NULL),
+    basePhotons(NULL),
+    photons(NULL),
     met(NULL)
 {
 }
@@ -52,6 +55,9 @@ Link::~Link()
     preTaus=NULL;
     baseTaus=NULL;
     taus=NULL;
+    prePhotons=NULL;
+    basePhotons=NULL;
+    photons=NULL;
     met=NULL;
 }
     

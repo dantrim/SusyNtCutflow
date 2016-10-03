@@ -60,7 +60,8 @@ Selector& Selector::buildRegion(int ireg)
         // Serhan
         /////////////////////////
         case(Cutflow::Serhan) : 
-        case(Cutflow::SUSY) : {
+        case(Cutflow::SUSY) :
+        case(Cutflow::EWK2L3L) : {
             if(ireg==0) // OS
             {
                 m_minPtBaseLep   = 10; // GeV

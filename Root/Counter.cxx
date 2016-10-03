@@ -86,16 +86,18 @@ const vector<string> Counter::eventCutflowLabels()
     labels.push_back("lar err");
     // Tile error
     labels.push_back("tile err");
+    // SCT error    
+    labels.push_back("sct err");
     // TTC
     labels.push_back("ttc veto");   
     // good vtx
     labels.push_back("good vertex");
-    // jet cleaning
-    labels.push_back("jet cleaning");
     // bad muon
     labels.push_back("bad muon");
     // cosmic muons
     labels.push_back("cosmic muon");
+    // jet cleaning
+    labels.push_back("jet cleaning");
 
     return labels;
 }
@@ -187,7 +189,18 @@ const vector<vector<string>> Counter::cutflowLabels(const Cutflow &c)
         labels.push_back(cut_labels);
         break;
     } // end case SUSY
-
+    //////////////////////////////////////
+    // EWK2L3L
+    //////////////////////////////////////
+    case(Cutflow::EWK2L3L) : {
+        m_regions.push_back("EWK2L3L");
+        std::vector<std::string> cut_labels;
+        cut_labels.push_back(">=1 baseline electrons");
+        //cut_labels.push_back(">=1 b-tagged jet");
+        cut_labels.push_back("==3 signal leptons");
+        labels.push_back(cut_labels);
+        break;
+    } // end case EWK2L3L
     //////////////////////////////////////
     // Unknown
     //////////////////////////////////////
@@ -267,6 +280,18 @@ void Counter::constructCounters(const Cutflow &c)
             break;
     }
     //////////////////////////////////////
+    // EWK2L3L
+    //////////////////////////////////////
+        case(Cutflow::EWK2L3L) : {
+            for(unsigned int iReg=0; iReg<cutflowLabels(c).size(); iReg++){
+            for(unsigned int iCut=0; iCut<cutflowLabels(c)[iReg].size(); iCut++){
+                m_dileptonCounters[iReg][iCut][LeptonChan2idx(LeptonChan::SF)] = 0.0;
+                m_dileptonCounters[iReg][iCut][LeptonChan2idx(LeptonChan::DF)] = 0.0;
+            }// iCut
+            }// iReg
+            break;
+    }
+    //////////////////////////////////////
     // Unknown
     //////////////////////////////////////
     case(Cutflow::kUnknown) : {
@@ -301,20 +326,23 @@ bool Counter::pass_eventCleaning(Link* link)
     // tile error
     if(!link->tools->passTileErr(flags))                return false;
     m_cleaningCounters[iEventCut]++;                    iEventCut++;
+    // SCT error
+    if(!link->tools->passSCTErr(flags))                 return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
     // ttc veto
     if(!link->tools->passTTC(flags))                    return false;
     m_cleaningCounters[iEventCut]++;                    iEventCut++;
     // good vertex
     if(!link->tools->passGoodVtx(flags))                return false;
     m_cleaningCounters[iEventCut]++;                    iEventCut++;
-    // jet cleaning
-    if(!link->tools->passJetCleaning(*link->baseJets))    return false;
-    m_cleaningCounters[iEventCut]++;                    iEventCut++;
     // bad muon
     if(!link->tools->passBadMuon(*link->preMuons))       return false;
     m_cleaningCounters[iEventCut]++;                    iEventCut++;
     // cosmic muon
     if(!link->tools->passCosmicMuon(*link->baseMuons))   return false;
+    m_cleaningCounters[iEventCut]++;                    iEventCut++;
+    // jet cleaning
+    if(!link->tools->passJetCleaning(*link->preJets))    return false;
     m_cleaningCounters[iEventCut]++;                    iEventCut++;
 
     // passed event cleaning
@@ -346,6 +374,13 @@ bool Counter::pass_cutflow(Link* link)
         //////////////////////////////////////
         case(Cutflow::SUSY) : {
             if(!pass_SUSYCutflow(link)) pass = false;
+            break;
+        }
+        //////////////////////////////////////
+        // EWK2L3L
+        //////////////////////////////////////
+        case(Cutflow::EWK2L3L) : {
+            if(!pass_EWK2L3L(link)) pass = false;
             break;
         }
         //////////////////////////////////////
@@ -529,6 +564,50 @@ bool Counter::pass_SerhanCutflow(Link* link)
     return true;
 }
 /* =================================================== */
+//  Cuts for cutflow EWK2L3L
+/* =================================================== */
+bool Counter::pass_EWK2L3L(Link* link)
+{
+    for(uint ireg=0; ireg<cutflowLabels(m_cutflow).size(); ireg++) {
+        int iCut=0;
+        m_selector.setCutflow(m_cutflow).buildRegion(ireg);
+        if(ireg==0) {
+            //int n_bjets = 0;
+            //for(int i = 0; i < (int)link->jets->size(); i++) {
+            //Susy::Jet* j = link->jets->at(i);
+            ////for(auto& j : link->jets) {
+            //    bool pt_cut = (j->Pt()>20.0);
+            //    bool eta_cut = (fabs(j->Eta())<2.5);
+            //    bool mv2 = (j->mv2c10>JetSelector::mv2c10_77efficiency());
+            //    double jvt = j->jvt;
+            //    bool pass_jvt = ((jvt>0.59 || fabs(j->Eta())>2.4 || j->Pt()>60.0));
+            //    bool is_b = (pt_cut && eta_cut && mv2 && pass_jvt);
+            //    if(is_b) n_bjets++;
+//112       //  pass = ((jet->jvt         >  0.59) ||
+//113       //          (fabs(jet->Eta()) >  2.4)  ||
+//114       //          (jet->Pt()         > 60.0) );
+// 63     re//turn ((jet->Pt()        > 20.0   ) &&
+// 64       //      (fabs(jet->Eta()) <  2.5   ) &&
+// 65       //      (jet->mv2c10      > mv2c10_77efficiency()) &&
+// 66       //      (passJvt(jet)));
+            //}
+            //if(!(n_bjets>=1)) return false;
+            if(!(link->baseElectrons->size()>=1)) return false;
+            m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+            iCut++;
+            dumpThisCut(link);
+
+            if(!(link->leptons->size()==3)) return false;
+            m_dileptonCounters[0][iCut][LeptonChan2idx(LeptonChan::SF)]++;
+            iCut++;
+
+        } // ireg==0
+    } //ireg
+
+
+    return true;
+}
+/* =================================================== */
 // Get the cutflow for the SUSY Analysis Google Doc
 /* =================================================== */
 bool Counter::pass_SUSYCutflow(Link* link)
@@ -641,11 +720,13 @@ void Counter::dumpThisCut(Link* link)
 {
     outfile.open(debug_name.c_str(), ios::app | ios::out);
     int eventno = link->nt->evt()->eventNumber;
-    if(eventno== 7631994) {
-        outfile << eventno << "    " << endl;
-        for(uint i = 0; i < link->baseJets->size(); i++){
-            outfile << "    " << "j[" << i << "]   pt: " << link->baseJets->at(i)->Pt() << "  eta: " << link->baseJets->at(i)->Eta() << "  phi: " << link->baseJets->at(i)->Phi() << endl;
-        }
+    outfile << eventno << endl;
+//    int eventno = link->nt->evt()->eventNumber;
+//    if(eventno== 7631994) {
+//        outfile << eventno << "    " << endl;
+//        for(uint i = 0; i < link->baseJets->size(); i++){
+//            outfile << "    " << "j[" << i << "]   pt: " << link->baseJets->at(i)->Pt() << "  eta: " << link->baseJets->at(i)->Eta() << "  phi: " << link->baseJets->at(i)->Phi() << endl;
+//        }
     /*
         for(uint il=0; il<link->preLeptons->size(); il++){
             Susy::Lepton ilep = *link->preLeptons->at(il);
@@ -674,8 +755,8 @@ void Counter::dumpThisCut(Link* link)
    //         float eta = link->baseLeptons->at(il)->Eta();
    //         outfile << "lep("<<il<<") id: " << id<<"  (pt,eta):("<<pt<<", "<<eta <<")  | ";
    //     }
-        outfile << endl;
-    }
+//        outfile << endl;
+//    }
  //   for(uint il = 0; il<link->baseLeptons->size(); il++){
  //       int id = link->baseLeptons->at(il)->isEle() ? 11 : 13;
  //       int q = link->baseLeptons->at(il)->q;
@@ -725,14 +806,16 @@ void Counter::dumpThisInfo(Link* link)
         MuonVector preMuons         = *link->preMuons;
         JetVector preJets           = *link->preJets;
         TauVector preTaus           ;
+        PhotonVector prePhotons     ;
 
         ElectronVector baseElectrons    ;
         MuonVector     baseMuons        ;
         JetVector baseJets              ;
         TauVector baseTaus              ;
+        PhotonVector basePhotons        ;
 
-        link->tools->getBaselineObjects(preElectrons, preMuons, preJets, preTaus,
-                                        baseElectrons, baseMuons, baseJets, baseTaus);
+        link->tools->getBaselineObjects(preElectrons, preMuons, preJets, preTaus, prePhotons,
+                                        baseElectrons, baseMuons, baseJets, baseTaus, basePhotons);
 
         LeptonVector baseLeps;
         link->tools->buildLeptons(baseLeps, baseElectrons, baseMuons);

@@ -65,6 +65,7 @@ SusyCutflow& SusyCutflow::setAnalysis(const AnalysisType &a)
 /* ======================================================== */
 SusyCutflow& SusyCutflow::setCutflow(const Cutflow &a)
 {
+    cout << "hello : " << Cutflow2str(a) << endl;
     m_cutflow = a;
     m_counter.setAnalysis(m_anatype).setCutflow(a);
     return *this;
@@ -158,6 +159,10 @@ void SusyCutflow::linkNtObjects(Link* link)
     
     link->baseTaus          = &m_baseTaus;
     link->taus              = &m_signalTaus;
+
+    link->prePhotons        = &m_prePhotons;
+    link->basePhotons       = &m_basePhotons;
+    link->photons           = &m_signalPhotons;
     
     link->met               = m_met;
     

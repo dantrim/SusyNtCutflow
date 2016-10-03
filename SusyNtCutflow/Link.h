@@ -54,6 +54,10 @@ namespace Susy {
         TauVector*              baseTaus;           ///< basline taus
         TauVector*              taus;               ///< signal taus
 
+        PhotonVector*           prePhotons;         ///< selected photons before OR
+        PhotonVector*           basePhotons;        ///< baseline photons
+        PhotonVector*           photons;            ///< signal photons
+
         const Susy::Met*        met;                ///< met
 
     }; // class Link

@@ -14,6 +14,7 @@ namespace Susy {
         switch(c){
             case Cutflow::Stop2l_ME     : s = "Stop2l_ME"          ; break;
             case Cutflow::Serhan        : s = "Serhan"             ; break;
+            case Cutflow::EWK2L3L       : s = "EWK2L3L"            ; break;
             case Cutflow::kUnknown      : s = "Invalid Cutflow"    ; break;
         }
         return s;
@@ -24,7 +25,8 @@ namespace Susy {
         switch(c) {
             case Cutflow::Stop2l_ME     : idx = 0      ; break;
             case Cutflow::Serhan        : idx = 1      ; break;
-            case Cutflow::kUnknown      : idx = 2      ; break;
+            case Cutflow::EWK2L3L       : idx = 2      ; break;
+            case Cutflow::kUnknown      : idx = 3      ; break;
         }
         return idx;
     }

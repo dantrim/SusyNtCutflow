@@ -95,14 +95,15 @@ int main(int argc, char** argv)
     /* ============================================ */
     //  Set the analysis type                        
     /* ============================================ */
-    susyAna->setAnalysis(AnalysisType::Ana_Stop2L);
-    cout << "runCutflow: Setting analysis type to " << AnalysisType2str(AnalysisType::Ana_Stop2L) << endl;
+    susyAna->setAnalysis(AnalysisType::Ana_2Lep);
+    cout << "runCutflow: Setting analysis type to " << AnalysisType2str(AnalysisType::Ana_2Lep) << endl;
     /* ============================================ */
     //  Set the cutflow
     /* ============================================ */
     if(cutflow.find("Stop2l_ME")!=string::npos) susyAna->setCutflow(Cutflow::Stop2l_ME);
     if(cutflow.find("Serhan")!=string::npos) susyAna->setCutflow(Cutflow::Serhan);
     if(cutflow.find("SUSY")!=string::npos) susyAna->setCutflow(Cutflow::SUSY);
+    if(cutflow.find("EWK2L3L")!=string::npos) susyAna->setCutflow(Cutflow::EWK2L3L);
 
     // Run job
     if(nEvt<0) nEvt = nEntries;

@@ -10,6 +10,7 @@ namespace Susy
         Stop2l_ME=0 // cutflow with Marialea 
         ,Serhan // cutflow with Serhan
         ,SUSY // cutflow for SUSY Analsysis at [1]
+        ,EWK2L3L // cutflow for EWK 2l/3l
         ,kUnknown
     };
     std::string Cutflow2str(const Cutflow &c);
